@@ -1,11 +1,10 @@
 import pandas as pd
 import os
 
-# ==== File paths ====
-folder = r'D:\Axon python scripts\Documentation'
-current_file = os.path.join(folder, 'output_current.xlsx')
-previous_file = os.path.join(folder, 'output_history.xlsx')
-output_file = os.path.join(folder, 'diff_analysis.xlsx')
+# ==== File paths directly specified ====
+current_file = r'D:\Axon python scripts\Documentation\Current data scripts\output_current.xlsx'
+previous_file = r'D:\Axon python scripts\Documentation\History data scripts\output_history.xlsx'
+output_file = r'D:\Axon python scripts\Documentation\diff_analysis.xlsx'
 
 # ==== Load both DataFrames ====
 df_current = pd.read_excel(current_file)
@@ -25,12 +24,12 @@ df_merged = pd.merge(
     how='outer', validate='one_to_one'
 )
 
-# ==== Calculate Differences (for numeric columns) ====
+# ==== Calculate Differences for numeric columns ====
 num_fields = [
     'Facility Count', 'Tank Count', 'City Count', 'Zip Count', 'UST/AST Types', 'Install Years',
-    'Tank Size Min', 'Tank Size Max', 'Tank Size Avg', 'Top Size Range Count', 'Top Tank Status Count',
-    'Top Construction Count', 'Top Content Count', 'Top Piping Const Count', 'County Count',
-    'Top Lust Count'  # <-- Added for LUST count
+    'Tank Size Min', 'Tank Size Max', 'Tank Size Avg',
+    'Top Size Range Count', 'Top Tank Status Count', 'Top Construction Count', 'Top Content Count',
+    'Top Piping Const Count', 'County Count', 'Top Lust Count'  # for LUST count
 ]
 
 for field in num_fields:
@@ -38,12 +37,15 @@ for field in num_fields:
     p_col = field + '_Previous'
     diff_col = field + '_Diff'
     if c_col in df_merged.columns and p_col in df_merged.columns:
+        # Convert to numeric
+        df_merged[c_col] = pd.to_numeric(df_merged[c_col], errors='coerce')
+        df_merged[p_col] = pd.to_numeric(df_merged[p_col], errors='coerce')
         df_merged[diff_col] = df_merged[c_col] - df_merged[p_col]
 
 # ==== Check for changes in key text fields ====
 text_fields = [
     'Top Size Range', 'Top Tank Status', 'Top Construction', 'Top Content',
-    'Top Piping Construction', 'Top Lust Term'  # <-- Added for LUST term
+    'Top Piping Construction', 'Top Lust Term'   # added for LUST term
 ]
 for field in text_fields:
     c_col = field + '_Current'
@@ -52,6 +54,6 @@ for field in text_fields:
     if c_col in df_merged.columns and p_col in df_merged.columns:
         df_merged[diff_col] = df_merged[c_col] != df_merged[p_col]
 
-# ==== Save to Excel ====
+# ==== Save the output ====
 df_merged.to_excel(output_file, index=False)
 print(f"Differential analysis saved to {output_file}")
